@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Create a server certificate for a machine and sign the certificate.
+# We use 4096-bit RSA because MacOS does not yet support EC keys!
+VAPR_DATA_DIR_build=`pwd`/build ./dockertools/bin/run caroot.docker caroot bash -c "
+HOSTNAMES=\"$HOSTNAMES\"
+HOSTIPS=\"$HOSTIPS\"
+CERTNAME=\"$CERTNAME\"
+if [[ -z \"\${CERTNAME}\" ]]; then
+    echo Environment variables:
+    echo * HOSTNAMES=hostname1,hostname2,hostname3,...
+    echo * HOSTIPS=hostip1,hostip2,hostip3,...
+    exit 1
+fi
+
+# Fill out alt_name section.
+echo \"[ alt_name ]\" >> /etc/ssl/openssl.cnf
+if [[ -z \"\${HOSTNAMES}\" && -z \"\${HOSTIPS}\" ]]; then
+    echo \"IP.1 = 255.255.255.255\" >> /etc/ssl/openssl.cnf
+else
+    # Write out host names
+    OIFS=\$OIFS
+    IFS=,
+
+    IDX=1
+    for HOST in \${HOSTNAMES}; do
+        echo \"DNS.\${IDX} = \${HOST}\" >> /etc/ssl/openssl.cnf
+        ((IDX++))
+    done
+
+    # Write out IP addresses
+    IDX=1
+    for IP in \${HOSTIPS}; do
+        echo \"IP.\${IDX} = \${IP}\" >> /etc/ssl/openssl.cnf
+        ((IDX++))
+    done
+
+    IFS=\$OIFS
+fi
+
+mkdir -p build/private
+openssl genrsa -out build/private/\${CERTNAME}.key
+chmod go-rx build/private/\${CERTNAME}.key
+openssl req -new -nodes -key build/private/\${CERTNAME}.key -out host.csr
+chmod go-rx build/private
+
+openssl ca -batch -keyfile build/private/ca.key -in host.csr -out host.crt -extensions ssl_server
+cat host.crt build/ca.crt >> build/newcerts/\${CERTNAME}.crt
+"
