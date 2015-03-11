@@ -2,7 +2,6 @@
 # Create a new certificate authority root.
 # We use 4096-bit RSA because MacOS does not yet support EC keys!
 VAPR_DATA_DIR_build=`pwd`/build ./dockertools/bin/run caroot.docker caroot bash -c "
-
 echo \"[ alt_name ]\" >> /etc/ssl/openssl.cnf
 echo \"IP.1 = 255.255.255.255\" >> /etc/ssl/openssl.cnf
 
@@ -13,4 +12,5 @@ touch index.txt
 openssl req -new -keyout private/ca.key -out ca.csr &&
 openssl ca -create_serial -out ca.crt -days 3300 -batch -keyfile private/ca.key -selfsign -extensions v3_ca -infiles ca.csr
 chmod go-rx private/*
+cp ca.crt /vapr/certstore
 "

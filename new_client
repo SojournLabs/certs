@@ -7,8 +7,9 @@ HOSTIPS=\"$HOSTIPS\"
 CERTNAME=\"$CERTNAME\"
 if [[ -z \"\${CERTNAME}\" ]]; then
     echo Environment variables:
-    echo * HOSTNAMES=hostname1,hostname2,hostname3,...
-    echo * HOSTIPS=hostip1,hostip2,hostip3,...
+    echo \* HOSTNAMES=hostname1,hostname2,hostname3,...
+    echo \* HOSTIPS=hostip1,hostip2,hostip3,...
+    echo \* CERTNAME=certificate_name
     exit 1
 fi
 
@@ -45,4 +46,5 @@ chmod go-rx build/private
 
 openssl ca -batch -keyfile build/private/ca.key -in host.csr -out host.crt -extensions ssl_client
 cat host.crt build/ca.crt >> build/newcerts/\${CERTNAME}.crt
+cp build/newcerts/\${CERTNAME}.crt /vapr/certstore
 "
