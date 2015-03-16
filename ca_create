@@ -9,8 +9,9 @@ cd build
 mkdir -p private newcerts crl
 chmod go-rx private
 touch index.txt
-openssl req -new -keyout private/ca.key -out ca.csr &&
-openssl ca -create_serial -out ca.crt -days 3300 -batch -keyfile private/ca.key -selfsign -extensions v3_ca -infiles ca.csr
+echo 01 >> serial
+openssl genrsa -des -out private/ca.key 4096 &&
+openssl req -new -x509 -days 3300 -key private/ca.key -out ca.crt
 chmod go-rx private/*
 cp ca.crt /vapr/certstore
 "
