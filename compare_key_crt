@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Create a peer certificate for a machine and sign the certificate.
+# We use 4096-bit RSA because MacOS does not yet support EC keys!
+VAPR_DATA_DIR_build=`pwd`/build ./dockertools/bin/run caroot.docker caroot bash -c "
+openssl rsa -noout -modulus -in build/*/$1.key | openssl md5
+openssl x509 -noout -modulus -in build/*/$1.crt | openssl md5
+"
