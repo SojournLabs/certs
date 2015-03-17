@@ -2,6 +2,11 @@
 # Create a new certificate authority root.
 # We use 4096-bit RSA because MacOS does not yet support EC keys!
 VAPR_DATA_DIR_build=`pwd`/build ./dockertools/bin/run caroot.docker caroot bash -c "
+echo \"[ code_signing ]\" >> /etc/ssl/openssl.cnf
+echo \"keyUsage                = digitalSignature\" >> /etc/ssl/openssl.cnf
+echo \"extendedKeyUsage        = codeSigning\" >> /etc/ssl/openssl.cnf
+echo \"IP.1 = 255.255.255.255\" >> /etc/ssl/openssl.cnf
+
 echo \"[ alt_name ]\" >> /etc/ssl/openssl.cnf
 echo \"IP.1 = 255.255.255.255\" >> /etc/ssl/openssl.cnf
 
@@ -13,5 +18,14 @@ echo 01 >> serial
 openssl genrsa -des -out private/ca.key 4096 &&
 openssl req -new -x509 -days 3300 -key private/ca.key -out ca.crt
 chmod go-rx private/*
+
+echo "[ alt_name ]" >> /etc/ssl/openssl.cnf
+echo "IP.1 = 255.255.255.255" >> /etc/ssl/openssl.cnf
+
+echo Creating code-signing certificate.
+openssl req -newkey rsa -keyout private/codesign.key -out codesign.req
+openssl ca -extensions code_signing -in codesign.req -out newcerts/codesign.crt
+
 cp ca.crt /vapr/certstore
+cp newcerts/codesign.crt /vapr/certstore
 "
