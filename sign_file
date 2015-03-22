@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Sign a file.
-VAPR_DATA_DIR_build=`pwd`/build VAPR_DATA_DIR_disk=/ ./dockertools/bin/run caroot.docker caroot bash -c "
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+VAPR_DATA_DIR_build=${SCRIPT_DIR}/build VAPR_DATA_DIR_disk=/ ./dockertools/bin/run caroot.docker caroot bash -c "
 FILENAME=\"$1\"
 RELDIR=`pwd`
 if [[ -z \"\${FILENAME}\" ]]; then

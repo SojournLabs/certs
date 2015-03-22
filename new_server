@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Create a server certificate for a machine and sign the certificate.
 # We use 4096-bit RSA because MacOS does not yet support EC keys!
-VAPR_DATA_DIR_build=`pwd`/build ./dockertools/bin/run caroot.docker caroot bash -c "
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+VAPR_DATA_DIR_build=${SCRIPT_DIR}/build ./dockertools/bin/run caroot.docker caroot bash -c "
 HOSTNAMES=\"$HOSTNAMES\"
 HOSTIPS=\"$HOSTIPS\"
 CERTNAME=\"$CERTNAME\"
