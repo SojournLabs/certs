@@ -40,7 +40,7 @@ else
 fi
 
 mkdir -p build/private
-openssl genrsa -out build/private/\${CERTNAME}.key
+openssl genrsa -out build/private/\${CERTNAME}.key 4096
 chmod go-rx build/private/\${CERTNAME}.key
 openssl req -new -nodes -key build/private/\${CERTNAME}.key -out host.csr
 chmod go-rx build/private
