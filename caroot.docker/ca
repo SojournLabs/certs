@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+create() {
+    cd /vapr/caroot
+    if [ -f certs/ca.crt ]; then
+        echo "Certificate authority already created."
+        exit 1
+    fi
+    
+    echo "[ alt_name ]" >> /etc/ssl/openssl.cnf
+    echo "IP.1 = 255.255.255.255" >> /etc/ssl/openssl.cnf
+
+    mkdir -p keys newcerts crl certs
+    chmod 700 keys
+    touch index.txt
+    echo 01 >> serial
+
+    if [ -f keys/ca.key ]; then
+        echo "Certificate authority keys already initialized."
+    else
+        openssl genrsa -des -out keys/ca.key 4096
+    fi
+    
+    openssl req -new -x509 -days 3300 -key keys/ca.key -out certs/ca.crt
+    chmod 700 keys/*
+    cp certs/ca.crt ca.crt
+}
+
+check_ca_exists() {
+    if [ ! -f /vapr/caroot/certs/ca.crt ]; then
+        echo "Certificate authority not initialized."
+        exit 1
+    fi
+}
+
+create_code_signing() {
+    cd /vapr/caroot
+    if [ -f certs/codesign.crt ]; then
+        echo "Code signing certificate already created."
+        exit 1
+    fi
+
+    echo "[ code_signing ]" >> /etc/ssl/openssl.cnf
+    echo "keyUsage                = digitalSignature" >> /etc/ssl/openssl.cnf
+    echo "extendedKeyUsage        = codeSigning" >> /etc/ssl/openssl.cnf
+
+    echo "[ alt_name ]" >> /etc/ssl/openssl.cnf
+    echo "IP.1 = 255.255.255.255" >> /etc/ssl/openssl.cnf
+
+    if [ -f keys/codesign.key ]; then
+        echo "Code signing keys already initialized."
+    else
+        echo Creating code-signing certificate.
+        openssl req -newkey rsa:4096 -keyout keys/codesign.key -out codesign.req
+    fi
+
+    chmod go-rx keys/codesign.key
+    openssl ca -extensions code_signing -in codesign.req -out certs/codesign.crt
+}
+
+write_alt_names() {
+    # Fill out alt_name section.
+    echo "[ alt_name ]" >> /etc/ssl/openssl.cnf
+    if [[ -z "${HOSTNAMES}" && -z "${HOST_IPS}" ]]; then
+        echo "IP.1 = 255.255.255.255" >> /etc/ssl/openssl.cnf
+    else
+        # Write out host names
+        OIFS=$OIFS
+        IFS=,
+
+        IDX=1
+        
+        for HOST in ${HOSTNAMES}; do
+            echo "DNS.${IDX} = ${HOST}" >> /etc/ssl/openssl.cnf
+            ((IDX++))
+        done
+
+        # Write out IP addresses
+        IDX=1
+        for IP in ${HOST_IPS}; do
+            echo "IP.${IDX} = ${IP}" >> /etc/ssl/openssl.cnf
+            ((IDX++))
+        done
+
+        IFS=$OIFS
+    fi
+}
+    
+create_cert_with_extension() {
+    cd /vapr/caroot
+    check_ca_exists
+    local EXTENSIONS="$1"
+    local CERTNAME="$2"
+
+    if [ "${CERTNAME}" == "" ]; then
+        echo "Usage: cmd [HOSTNAMES=hostname1,hostname2,...] [HOST_IPS=hostip1,hostip2,...] certificate_name"
+        exit 1
+    fi
+
+    if [ -f certs/"${CERTNAME}".crt ]; then
+        echo "${CERTNAME}.crt already created."
+        exit 1
+    fi
+
+    write_alt_names
+
+    if [ -f certs/"${CERTNAME}".key ]; then
+        echo "${CERTNAME}.key already initialized."
+    else
+        openssl genrsa -out keys/${CERTNAME}.key 4096
+    fi
+    openssl req -new -nodes -key keys/${CERTNAME}.key -out host.csr
+    openssl ca -batch -keyfile keys/ca.key -in host.csr -out host.crt -extensions ${EXTENSIONS} && cat host.crt ca.crt >> certs/"${CERTNAME}".crt
+}
+
+sign() {
+    if [ "$1" == "" ]; then
+        echo "No filename provided."
+        exit 1
+    fi
+    cd /vapr/signing
+    openssl cms -inkey /vapr/keys/${TLS_KEY_NAME}.key -sign -binary -noattr -signer /vapr/certstore/${TLS_KEY_NAME}.crt -certfile /vapr/certstore/ca.crt -outform DER -in "$1" -out "$1".sig
+}
+
+CMD="$1"
+shift
+"${CMD}" "$@"

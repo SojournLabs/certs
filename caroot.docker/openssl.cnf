@@ -39,11 +39,11 @@ default_ca  = CA_default        # The default ca section
 ####################################################################
 [ CA_default ]
 
-dir         = /vapr/build       # Where everything is kept
+dir         = /vapr/caroot      # Where everything is kept
 certs       = $dir/certs        # Where the issued certs are kept
 crl_dir     = $dir/crl          # Where the issued crl are kept
 database    = $dir/index.txt    # database index file.
-#unique_subject = no            # Set to 'no' to allow creation of
+unique_subject = no             # Set to 'no' to allow creation of
                                 # several ctificates with same subject.
 new_certs_dir   = $dir/newcerts # default place for new certs.
 
@@ -52,8 +52,8 @@ serial      = $dir/serial       # The current serial number
 crlnumber   = $dir/crlnumber    # the current crl number
                     # must be commented out to leave a V1 CRL
 crl     = $dir/crl.pem          # The current CRL
-private_key = $dir/private/ca.key   # The private key
-RANDFILE    = $dir/private/.rand    # private random number file
+private_key = $dir/keys/ca.key   # The private key
+RANDFILE    = $dir/keys/.rand    # private random number file
 
 x509_extensions = usr_cert      # The extentions to add to the cert
 
@@ -335,7 +335,7 @@ signer_cert = $dir/tsacert.pem  # The TSA signing certificate
                     # (optional)
 certs       = $dir/ca.crt   # Certificate chain to include in reply
                     # (optional)
-signer_key  = $dir/private/tsakey.pem # The TSA private key (optional)
+signer_key  = $dir/keys/tsakey.pem # The TSA private key (optional)
 
 default_policy  = tsa_policy1       # Policy if request did not specify it
                     # (optional)
