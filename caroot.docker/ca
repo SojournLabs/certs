@@ -91,6 +91,7 @@ create_cert_with_extension() {
     check_ca_exists
     local EXTENSIONS="$1"
     local CERTNAME="$2"
+    local OTHER_FLAGS="$3"
 
     if [ "${CERTNAME}" == "" ]; then
         echo "Usage: cmd [HOSTNAMES=hostname1,hostname2,...] [HOST_IPS=hostip1,hostip2,...] certificate_name"
@@ -110,7 +111,8 @@ create_cert_with_extension() {
         openssl genrsa -out keys/${CERTNAME}.key 4096
     fi
     openssl req -new -nodes -key keys/${CERTNAME}.key -out host.csr
-    openssl ca -batch -keyfile keys/ca.key -in host.csr -out host.crt -extensions ${EXTENSIONS} && cat host.crt ca.crt >> certs/"${CERTNAME}".crt
+    openssl ca -batch -keyfile keys/ca.key -in host.csr -out host.crt ${OTHER_FLAGS} -extensions ${EXTENSIONS} && cat host.crt ca.crt >> certs/"${CERTNAME}".crt
+    openssl pkcs12 -export -inkey keys/${CERTNAME}.key -in host.crt -out keys/${CERTNAME}.p12
 }
 
 sign() {
